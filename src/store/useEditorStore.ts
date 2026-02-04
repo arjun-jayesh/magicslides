@@ -1,0 +1,251 @@
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import { devtools } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
+import { Project, Slide, CanvasElement, AspectRatio } from '@/models/types';
+import { createSelectionSlice, SelectionSlice } from './selectionSlice';
+
+/**
+ * Editor State Interface
+ */
+interface EditorState extends SelectionSlice {
+    project: Project;
+    activeSlideId: string | null;
+    editingElementId: string | null; // For text editing overlay
+
+    // Actions
+    setProject: (project: Project) => void;
+    addSlide: () => void;
+    setActiveSlide: (id: string) => void;
+    updateElement: (slideId: string, elementId: string, updates: Partial<CanvasElement>) => void;
+    addElement: (slideId: string, element: CanvasElement) => void;
+    // Global Actions
+    applyGlobalBackground: (image: string, filters?: any, scale?: number, position?: { x: number, y: number }) => void;
+    applyGlobalFilters: (filters: any) => void;
+    applyGlobalBackgroundTransform: (scale: number, position: { x: number, y: number }) => void;
+    addGlobalLogo: (imageSrc: string) => void;
+    updateSlide: (slideId: string, updates: Partial<Slide>) => void;
+    // V3 Branding
+    applyGlobalBackgroundColor: (color: string) => void;
+    applyGlobalTextColor: (color: string) => void;
+    applyBranding: (name: string, handle: string, avatarSrc: string) => void;
+    updateSlideThumbnail: (id: string, thumbnail: string) => void;
+    setEditingElement: (id: string | null) => void;
+}
+
+const INITIAL_PROJECT: Project = {
+    id: uuidv4(),
+    version: 2,
+    title: 'Untitled Project',
+    slides: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    aspectRatio: AspectRatio.RATIO_1_1,
+    theme: 'default'
+};
+
+export const useEditorStore = create<EditorState>()(
+    devtools(
+        immer((set, get, store) => ({
+            // --- SLICES ---
+            ...createSelectionSlice(set as any, get as any, store as any),
+
+            // --- DATA ---
+            project: INITIAL_PROJECT,
+            activeSlideId: null,
+            editingElementId: null,
+
+            // --- ACTIONS ---
+            setProject: (project) => set({ project, activeSlideId: project.slides[0]?.id || null }),
+
+            setEditingElement: (id) => set({ editingElementId: id }),
+
+            addSlide: () => set((state) => {
+                const newSlide: Slide = {
+                    id: uuidv4(),
+                    order: state.project.slides.length,
+                    elements: [],
+                    backgroundColor: '#ffffff',
+                    backgroundFilters: { blur: 0, brightness: 0, contrast: 0, saturation: 0 }
+                };
+                state.project.slides.push(newSlide);
+                state.activeSlideId = newSlide.id;
+                state.project.updatedAt = Date.now();
+            }),
+
+            setActiveSlide: (id) => set({ activeSlideId: id }),
+
+            updateElement: (slideId, elementId, updates) => set((state) => {
+                const slide = state.project.slides.find(s => s.id === slideId);
+                if (!slide) return;
+                const elIndex = slide.elements.findIndex(e => e.id === elementId);
+                if (elIndex !== -1) {
+                    Object.assign(slide.elements[elIndex], updates);
+                    state.project.updatedAt = Date.now();
+                }
+            }),
+
+            addElement: (slideId, element) => set((state) => {
+                const slide = state.project.slides.find(s => s.id === slideId);
+                if (slide) {
+                    slide.elements.push(element);
+                    state.project.updatedAt = Date.now();
+                }
+            }),
+
+            applyGlobalBackground: (image, filters, scale = 1, position = { x: 0, y: 0 }) => set((state) => {
+                // Ensure we update all slides
+                state.project.slides.forEach(slide => {
+                    slide.backgroundImage = image;
+                    if (filters) {
+                        slide.backgroundFilters = { ...filters };
+                    }
+                    slide.backgroundScale = scale;
+                    slide.backgroundPosition = position;
+                });
+                state.project.updatedAt = Date.now(); // Trigger re-render
+            }),
+
+            applyGlobalBackgroundTransform: (scale, position) => set((state) => {
+                state.project.slides.forEach(slide => {
+                    slide.backgroundScale = scale;
+                    slide.backgroundPosition = position;
+                });
+                state.project.updatedAt = Date.now();
+            }),
+
+            updateSlideThumbnail: (id, thumbnail) => set((state) => {
+                const slide = state.project.slides.find(s => s.id === id);
+                if (slide) {
+                    slide.thumbnail = thumbnail;
+                }
+            }),
+
+            applyGlobalFilters: (filters) => set((state) => {
+                state.project.slides.forEach(slide => {
+                    slide.backgroundFilters = filters;
+                });
+                state.project.updatedAt = Date.now();
+            }),
+
+            addGlobalLogo: (src) => set((state) => {
+                // Add logo to bottom right of every slide
+                // Assuming 1080px base
+                // Logo size 150x150, padding 50
+                state.project.slides.forEach(slide => {
+                    const logo: CanvasElement = {
+                        id: uuidv4(),
+                        type: 'image' as any, // Cast to avoid import cycle or ElementType
+                        src: src,
+                        x: 1080 - 150 - 40,
+                        y: 1080 - 150 - 40, // TODO: This needs to depend on aspect ratio height! 
+                        // But for now hardcoded to 1080 base.
+                        // Ideally we check project.aspectRatio
+                        width: 150,
+                        height: 150,
+                        rotation: 0,
+                        opacity: 1,
+                        locked: true,
+                        zIndex: 100, // Top
+                        maintainAspectRatio: true
+                    } as any;
+
+                    // Simple Y adjustment for Aspect Ratios
+                    if (state.project.aspectRatio === '16:9') logo.y = 608 - 150 - 40;
+                    if (state.project.aspectRatio === '4:5') logo.y = 1350 - 150 - 40;
+
+                    slide.elements.push(logo);
+                });
+                state.project.updatedAt = Date.now();
+            }),
+
+            updateSlide: (slideId, updates) => set((state) => {
+                const slide = state.project.slides.find(s => s.id === slideId);
+                if (slide) {
+                    Object.assign(slide, updates);
+                    state.project.updatedAt = Date.now();
+                }
+            }),
+
+            applyGlobalBackgroundColor: (color) => set((state) => {
+                state.project.slides.forEach(slide => {
+                    slide.backgroundColor = color;
+                });
+                state.project.updatedAt = Date.now();
+            }),
+
+            applyGlobalTextColor: (color) => set((state) => {
+                // Find all text elements and update fill
+                state.project.slides.forEach(slide => {
+                    slide.elements.forEach(el => {
+                        if (el.type === 'text') { // Cast check?
+                            (el as any).fill = color;
+                        }
+                    });
+                });
+                state.project.updatedAt = Date.now();
+            }),
+
+            applyBranding: (name, handle, avatarSrc) => set((state) => {
+                const pRatio = state.project.aspectRatio;
+                let baseY = 1080 - 100; // default for 1:1
+                if (pRatio === '16:9') baseY = 608 - 80;
+                if (pRatio === '4:5') baseY = 1350 - 100;
+
+                state.project.slides.forEach(slide => {
+                    // 0. Remove existing branding elements
+                    slide.elements = slide.elements.filter(el => !el.metadata?.isBranding);
+
+                    // 1. Avatar
+                    if (avatarSrc) {
+                        const avatar: CanvasElement = {
+                            id: uuidv4(),
+                            type: 'image' as any,
+                            src: avatarSrc,
+                            x: 40,
+                            y: baseY,
+                            width: 80,
+                            height: 80,
+                            rotation: 0,
+                            opacity: 1,
+                            locked: true,
+                            zIndex: 200,
+                            maintainAspectRatio: true,
+                            metadata: { isBranding: true },
+                            // Circular crop? Konva Image doesn't do circle crop easily without Group or fillPattern.
+                            // For V3 we assume square or pre-cropped.
+                        } as any;
+                        slide.elements.push(avatar);
+                    }
+
+                    // 2. Handle / Name
+                    const textContent = `${name} | ${handle}`;
+                    const brandingText: CanvasElement = {
+                        id: uuidv4(),
+                        type: 'text' as any,
+                        content: textContent,
+                        x: 140, // offset from avatar
+                        y: baseY + 25,
+                        width: 500,
+                        height: 50,
+                        fontSize: 24,
+                        fontFamily: 'Inter',
+                        fontWait: 'bold',
+                        fill: '#ffffff', // Default white, maybe contrast?
+                        align: 'left',
+                        verticalAlign: 'middle',
+                        rotation: 0,
+                        opacity: 1,
+                        locked: true,
+                        zIndex: 200,
+                        autoWidth: true,
+                        autoHeight: true,
+                        metadata: { isBranding: true },
+                    } as any;
+                    slide.elements.push(brandingText);
+                });
+                state.project.updatedAt = Date.now();
+            })
+        }))
+    )
+);
