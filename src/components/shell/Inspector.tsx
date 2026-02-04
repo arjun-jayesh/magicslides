@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { AspectRatio, ElementType, TextElement } from '@/models/types';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/components/ui/ToastProvider';
 
 export const Inspector = () => {
     const {
@@ -12,10 +13,16 @@ export const Inspector = () => {
         updateElement,
         addElement,
         applyGlobalBackground,
+        applyGlobalBackgroundColor,
         updateSlide,
         applyGlobalFilters,
-        applyGlobalBackgroundTransform
+        applyGlobalBackgroundTransform,
+        applyGlobalHeadingSize,
+        applyGlobalContentSize,
+        deleteElement
     } = useEditorStore();
+
+    const { showToast } = useToast();
 
     const activeSlide = project.slides.find(s => s.id === activeSlideId);
     const selectedId = selectedIds[0];
@@ -113,10 +120,8 @@ export const Inspector = () => {
                             </div>
                             <button
                                 onClick={() => {
-                                    // It is NOT exposed in the destructuring above (line 7-16).
-                                    // We need to add it to destructuring.
-                                    // For now, I will add it to the component.
-                                    useEditorStore.getState().applyGlobalBackgroundColor(activeSlide.backgroundColor);
+                                    applyGlobalBackgroundColor(activeSlide.backgroundColor);
+                                    showToast('Applied background color to all slides', 'success');
                                 }}
                                 className="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-200 p-1 rounded text-xs border border-blue-600/50"
                             >
@@ -136,7 +141,10 @@ export const Inspector = () => {
                             </button>
                             {activeSlide.backgroundImage && (
                                 <button
-                                    onClick={() => applyGlobalBackground('', activeSlide.backgroundFilters)}
+                                    onClick={() => {
+                                        applyGlobalBackground('', activeSlide.backgroundFilters);
+                                        showToast('Background image removed', 'info');
+                                    }}
                                     className="w-full bg-red-900/50 hover:bg-red-900 text-red-200 p-1 rounded text-xs"
                                 >
                                     Remove Background Image
@@ -202,6 +210,50 @@ export const Inspector = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    <div className="border-t border-gray-700 pt-4">
+                        <h3 className="font-bold text-white mb-2">Global Typography</h3>
+                        <div className="space-y-4 text-xs">
+                            <div>
+                                <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                    <span>Heading Size</span>
+                                    <span>69px</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-gray-800 border border-gray-600 rounded p-1 text-xs"
+                                        placeholder="Heading Size"
+                                        defaultValue={69}
+                                        onBlur={(e) => applyGlobalHeadingSize(parseInt(e.target.value))}
+                                    />
+                                    <button
+                                        onClick={() => applyGlobalHeadingSize(69)}
+                                        className="text-[10px] bg-gray-700 px-2 rounded hover:bg-gray-600 transition-colors"
+                                    >Reset</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                    <span>Content Size</span>
+                                    <span>54px</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-gray-800 border border-gray-600 rounded p-1 text-xs"
+                                        placeholder="Content Size"
+                                        defaultValue={54}
+                                        onBlur={(e) => applyGlobalContentSize(parseInt(e.target.value))}
+                                    />
+                                    <button
+                                        onClick={() => applyGlobalContentSize(54)}
+                                        className="text-[10px] bg-gray-700 px-2 rounded hover:bg-gray-600 transition-colors"
+                                    >Reset</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="border-t border-gray-700 pt-4">
@@ -386,16 +438,17 @@ export const Inspector = () => {
                         <button
                             className="w-full py-2 bg-red-900/40 hover:bg-red-900/60 text-red-200 text-xs rounded border border-red-900 transition-colors"
                             onClick={() => {
-                                // Since we don't have deleteAction yet, we use a trick or add it.
-                                // Actually better to just instruct user or fix Store to have delete.
-                                alert("Feature pending: Press DEL key to delete (Implemented in Overlay onKeyDown, will add global Listener soon).");
+                                if (activeSlideId && selectedId) {
+                                    deleteElement(activeSlideId, selectedId);
+                                }
                             }}
                         >
                             Delete Element
                         </button>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };

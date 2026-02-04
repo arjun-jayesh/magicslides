@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer, Rect, Image } from 'react-konva';
 import Konva from 'konva';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useToast } from '@/components/ui/ToastProvider';
 import { getCanvasDimensions, AspectRatioKey } from '@/core/contracts/math.contract';
 import ElementRenderer from './ElementRenderer';
 import EditorTransformer from './EditorTransformer';
@@ -111,9 +112,26 @@ const BackgroundImageNode = ({ src, width, height, filters, scale = 1, position 
 };
 
 export const CanvasStage: React.FC = () => {
-    const { project, activeSlideId, clearSelection } = useEditorStore();
+    const { project, activeSlideId, clearSelection, editingElementId, updateElement } = useEditorStore();
     const activeSlide = project.slides.find(s => s.id === activeSlideId);
+    const { showToast } = useToast();
     const stageRef = useRef<any>(null);
+    const replacerRef = useRef<HTMLInputElement>(null);
+
+    const handleGlobalReplace = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        const targetId = (e.target as any)._targetElementId;
+
+        if (file && activeSlideId && targetId) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const result = ev.target?.result as string;
+                updateElement(activeSlideId, targetId, { src: result });
+                showToast('Image replaced', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const dimensions = getCanvasDimensions((project.aspectRatio as AspectRatioKey) || '1:1');
     const scale = 0.5;
@@ -136,8 +154,11 @@ export const CanvasStage: React.FC = () => {
                 // 1080px * 0.2 = ~216px (plenty for 80px filmstrip)
                 const dataURL = stageRef.current.toDataURL({ pixelRatio: 0.2 });
                 updateSlideThumbnail(activeSlide.id, dataURL);
-            } catch (e) {
-                console.error("Thumbnail generation failed (likely tainted canvas)", e);
+            } catch (e: any) {
+                // If the canvas is tainted, this will fail. We've added CORS fix to help.
+                if (e.message?.includes('tainted')) {
+                    console.warn("Thumbnail failed: Canvas is tainted. Filters applied to remote images may block export.");
+                }
             }
         }, 1000);
 
@@ -154,6 +175,14 @@ export const CanvasStage: React.FC = () => {
 
     return (
         <div className="relative shadow-2xl bg-gray-800" style={{ width: dimensions.width * scale, height: dimensions.height * scale }}>
+            <input
+                id="global-image-replacer"
+                type="file"
+                ref={replacerRef}
+                hidden
+                onChange={handleGlobalReplace}
+                accept="image/*"
+            />
             <Stage
                 width={dimensions.width * scale}
                 height={dimensions.height * scale}
@@ -161,6 +190,7 @@ export const CanvasStage: React.FC = () => {
                 scaleY={scale}
                 ref={stageRef}
                 onClick={handleStageClick}
+                listening={!editingElementId}
             >
                 <Layer>
                     {/* Background Color */}
@@ -186,6 +216,22 @@ export const CanvasStage: React.FC = () => {
                     )}
 
                     {/* Elements */}
+                    {activeSlide.glassOverlay?.enabled && (
+                        <Rect
+                            x={50} // Default padding/offset for glass
+                            y={50}
+                            width={dimensions.width - 100}
+                            height={dimensions.height - 100}
+                            fill={activeSlide.glassOverlay.backgroundColor}
+                            opacity={activeSlide.glassOverlay.opacity}
+                            cornerRadius={activeSlide.glassOverlay.borderRadius}
+                            stroke={activeSlide.glassOverlay.border.split(' ')[2]} // Rough extraction
+                            strokeWidth={1}
+                            shadowBlur={20}
+                            shadowColor="rgba(0,0,0,0.5)"
+                            listening={false}
+                        />
+                    )}
                     {sortedElements.map(el => (
                         <ElementRenderer key={el.id} element={el} />
                     ))}

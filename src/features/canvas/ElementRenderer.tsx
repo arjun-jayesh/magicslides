@@ -14,6 +14,7 @@ const useCustomImage = (src: string) => {
     useEffect(() => {
         if (!src) return;
         const img = new window.Image();
+        img.crossOrigin = "anonymous"; // V2: Fix Tainted Canvas
         img.src = src;
         img.onload = () => setImage(img);
     }, [src]);
@@ -65,6 +66,15 @@ const ElementRenderer: React.FC<Props> = ({ element }) => {
 
     const isEditing = editingElementId === element.id;
 
+    // V2: Replacement input will be handled by a global hidden input in CanvasStage to avoid Konva node warnings
+    const triggerImageReplace = () => {
+        const input = document.getElementById('global-image-replacer') as HTMLInputElement;
+        if (input) {
+            (input as any)._targetElementId = element.id;
+            input.click();
+        }
+    };
+
     const commonProps = {
         x: element.x,
         y: element.y,
@@ -80,6 +90,7 @@ const ElementRenderer: React.FC<Props> = ({ element }) => {
         },
         onDblClick: (e: any) => {
             e.cancelBubble = true;
+            if (e.evt) e.evt.preventDefault();
             if (element.type === ElementType.TEXT && !element.locked) {
                 setEditingElement(element.id);
             }
@@ -155,14 +166,18 @@ const ElementRenderer: React.FC<Props> = ({ element }) => {
                     cornerRadius={element.cornerRadius}
                 />
             );
-        } else if (element.shapeType === 'circle') {
-            // ... logic for circle?
         }
     } else if (element.type === ElementType.IMAGE) {
-        // We need Image component imported from react-konva if not already?
-        // It is not imported! Wait, ElementRenderer imports Text, Rect.
-        // We need Image.
-        return <ElementImageRenderer element={element} commonProps={commonProps} />;
+        const imageProps = {
+            ...commonProps,
+            onClick: (e: any) => {
+                e.cancelBubble = true;
+                select(element.id);
+                triggerImageReplace();
+            }
+        };
+
+        return <ElementImageRenderer element={element} commonProps={imageProps} />;
     }
 
     return null;

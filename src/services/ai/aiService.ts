@@ -5,13 +5,9 @@ export interface AIRequest {
 }
 
 export class AIService {
-    private static ENDPOINT = 'http://127.0.0.1:8080/completion';
+    private static ENDPOINT = 'http://127.0.0.1:8080/v1/chat/completions';
 
     static async generate(req: AIRequest): Promise<string> {
-        // Construct Llama.cpp prompt format (ChatML style often works best, or raw)
-        // Adjust based on typical qwen formatting if known, otherwise standard system/user
-        const prompt = `<|im_start|>system\n${req.systemPrompt}<|im_end|>\n<|im_start|>user\n${req.userPrompt}<|im_end|>\n<|im_start|>assistant\n`;
-
         try {
             const response = await fetch(this.ENDPOINT, {
                 method: 'POST',
@@ -19,19 +15,25 @@ export class AIService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    prompt: prompt,
-                    n_predict: 512,
-                    temperature: req.temperature || 0.2,
-                    stop: ["<|im_end|>"] // Stop token for chat models
+                    model: 'qwen2.5-0.5b',
+                    messages: [
+                        { role: 'system', content: req.systemPrompt },
+                        { role: 'user', content: req.userPrompt }
+                    ],
+                    temperature: req.temperature || 0.7,
+                    max_tokens: 2048,
+                    response_format: { type: 'json_object' }
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`AI Server Error: ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`AI Server Error: ${response.statusText} ${JSON.stringify(errorData)}`);
             }
 
             const data = await response.json();
-            return data.content; // llama.cpp server usually returns { content: "..." }
+            // OpenAI format: data.choices[0].message.content
+            return data.choices?.[0]?.message?.content || '';
         } catch (error) {
             console.error('AI Service Failed:', error);
             throw error;

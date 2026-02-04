@@ -1,11 +1,14 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { AIService } from '@/services/ai/aiService';
 import { buildPrompt, SYSTEM_PROMPT } from '@/services/ai/prompts';
 import { ResponseParser } from '@/core/parser/responseParser';
 import { ContentMapper } from '@/core/bridge/ContentMapper';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useToast } from '@/components/ui/ToastProvider';
 
-type Tab = 'content' | 'branding' | 'colors';
+import { PresetManager } from '../../features/presets/PresetManager';
+
+type Tab = 'content' | 'design' | 'branding' | 'colors';
 
 export const AIPanel = () => {
     const [activeTab, setActiveTab] = useState<Tab>('content');
@@ -29,6 +32,7 @@ export const AIPanel = () => {
     const [textColor, setTextColor] = useState('#000000');
 
     const { setProject, applyBranding, applyGlobalBackgroundColor, applyGlobalTextColor } = useEditorStore();
+    const { showToast } = useToast();
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -40,23 +44,19 @@ export const AIPanel = () => {
                 style
             });
 
-            // V3: Enforce strict slide count in system prompt if needed, but buildPrompt handles it.
             const raw = await AIService.generate({
                 systemPrompt: SYSTEM_PROMPT,
                 userPrompt,
                 temperature: 0.7
             });
 
-            console.log("AI Output", raw);
             const parsed = ResponseParser.parse(raw);
             const project = ContentMapper.createProjectFromAI(parsed);
 
-            // Apply requested count logic if parser missed it?
-            // ContentMapper builds what it finds.
-
             setProject(project);
+            showToast('Carousel generated successfully!', 'success');
         } catch (e) {
-            alert('AI Generation Failed: ' + e);
+            showToast('AI Generation Failed: ' + e, 'error');
         } finally {
             setLoading(false);
         }
@@ -68,6 +68,7 @@ export const AIPanel = () => {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 setAvatarSrc(ev.target?.result as string);
+                showToast('Avatar uploaded', 'success');
             };
             reader.readAsDataURL(file);
         }
@@ -75,17 +76,17 @@ export const AIPanel = () => {
 
     const handleApplyBranding = () => {
         if (!brandName || !handle) {
-            alert("Please enter Name and Handle");
+            showToast("Please enter Name and Handle", 'error');
             return;
         }
         applyBranding(brandName, handle, avatarSrc);
-        alert("Branding applied to all slides!");
+        showToast("Branding applied to all slides!", 'success');
     };
 
     const handleApplyColors = () => {
         applyGlobalBackgroundColor(bgColor);
         applyGlobalTextColor(textColor);
-        alert("Colors applied!");
+        showToast("Colors applied!", 'success');
     };
 
     return (
@@ -97,6 +98,12 @@ export const AIPanel = () => {
                     className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'content' ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
                 >
                     Content
+                </button>
+                <button
+                    onClick={() => setActiveTab('design')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'design' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    Design
                 </button>
                 <button
                     onClick={() => setActiveTab('branding')}
@@ -179,6 +186,13 @@ export const AIPanel = () => {
                         >
                             {loading ? 'Generating Magic...' : '✨ Generate Carousel'}
                         </button>
+                    </div>
+                )}
+
+                {/* --- DESIGN TAB --- */}
+                {activeTab === 'design' && (
+                    <div className="space-y-6">
+                        <PresetManager />
                     </div>
                 )}
 

@@ -91,7 +91,7 @@ export const TextEditorOverlay: React.FC = () => {
         outline: 'none',
         resize: 'none',
         overflow: 'hidden',
-        zIndex: 1000,
+        zIndex: 9999,
 
         transform: `rotate(${element.rotation}deg)`,
         transformOrigin: 'top left',

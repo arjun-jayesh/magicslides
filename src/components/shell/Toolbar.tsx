@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { ExportManager } from '@/features/export/exportManager';
 import { PersistenceManager } from '@/features/persistence/persistenceManager';
+import { Undo2, Redo2 } from 'lucide-react';
 
 export const Toolbar = () => {
     const { project, addSlide, setProject } = useEditorStore();
@@ -42,6 +43,23 @@ export const Toolbar = () => {
                 <button onClick={() => fileInputRef.current?.click()} className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600">
                     Load
                 </button>
+
+                <div className="flex bg-gray-800 rounded p-1">
+                    <button
+                        onClick={() => useEditorStore.getState().undo()}
+                        className="p-1 px-2 hover:bg-gray-700 text-white rounded transition-colors disabled:opacity-30"
+                        title="Undo (Ctrl+Z)"
+                    >
+                        <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => useEditorStore.getState().redo()}
+                        className="p-1 px-2 hover:bg-gray-700 text-white rounded transition-colors disabled:opacity-30"
+                        title="Redo (Ctrl+Y)"
+                    >
+                        <Redo2 className="w-4 h-4" />
+                    </button>
+                </div>
 
                 <button onClick={addSlide} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-500">
                     Add Slide

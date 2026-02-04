@@ -36,6 +36,16 @@ export interface GradientConfig {
     angle: number; // 0-360
 }
 
+export interface GlassOverlay {
+    enabled: boolean;
+    backgroundColor: string;
+    backdropFilter: string;
+    borderRadius: number;
+    border: string;
+    padding: number;
+    opacity: number;
+}
+
 // --- ELEMENTS ---
 
 export enum ElementType {
@@ -94,6 +104,18 @@ export type CanvasElement = TextElement | ImageElement | ShapeElement;
 
 // --- STRUCTURE ---
 
+export enum SlideLayoutType {
+    TITLE = 'title',
+    CONTENT = 'content',
+    NUMBERED = 'numbered',
+    COMPARISON = 'comparison',
+    COMPARISON_IMAGE = 'comparison_image',
+    IMAGE_ONLY = 'image_only',
+    IMAGE_TEXT = 'image_text',
+    HEADING = 'heading',
+    CTA = 'cta'
+}
+
 export interface Slide {
     id: Identifier;
     elements: CanvasElement[];
@@ -104,6 +126,8 @@ export interface Slide {
     backgroundScale?: number; // For "Crop" / Zoom
     backgroundPosition?: { x: number, y: number }; // For Pan
     thumbnail?: string; // Base64 preview
+    layoutType?: SlideLayoutType;
+    glassOverlay?: GlassOverlay;
 }
 
 export interface Project {
@@ -137,4 +161,24 @@ export interface Template {
     aspectRatio: AspectRatio; // V2 specific templates?
     slots: Slot[];
     backgroundElements: CanvasElement[];
+}
+
+export interface LayoutPreset {
+    id: Identifier;
+    name: string;
+    fonts: {
+        heading: string;
+        body: string;
+        accent?: string;
+    };
+    colorPalette: {
+        primary: string;
+        secondary: string;
+        background: string;
+        text: string;
+        accent?: string;
+    };
+    filterDefaults: FilterConfig;
+    glassSettings: Partial<GlassOverlay>;
+    spacing: number;
 }

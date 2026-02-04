@@ -1,95 +1,213 @@
 import { Template, ElementType, AspectRatio } from '@/models/types';
-import { v4 as uuidv4 } from 'uuid';
 
 export const BASE_TEMPLATES: Template[] = [
-    // 1. HERO SLIDE
+    // 1. TITLE
     {
-        id: 'tpl_hero',
+        id: 'TITLE',
         name: 'Hero / Title',
         version: 1,
         aspectRatio: AspectRatio.RATIO_1_1,
         backgroundElements: [],
         slots: [
             {
-                id: 'headline',
+                id: 'heading',
                 type: ElementType.TEXT,
-                rect: { x: 100, y: 300, width: 880, height: 300 }, // Center-ish
+                rect: { x: 100, y: 300, width: 880, height: 300 },
                 constraints: { charLimit: 80 }
             },
             {
-                id: 'subhead',
+                id: 'subheading',
                 type: ElementType.TEXT,
                 rect: { x: 100, y: 650, width: 880, height: 150 },
                 constraints: { charLimit: 120 }
             }
         ]
     },
-    // 2. CONTENT / LIST SLIDE
+    // 2. CONTENT
     {
-        id: 'tpl_content',
-        name: 'Content List',
+        id: 'CONTENT',
+        name: 'Standard Content',
         version: 1,
         aspectRatio: AspectRatio.RATIO_1_1,
         backgroundElements: [],
         slots: [
             {
-                id: 'headline',
+                id: 'heading',
                 type: ElementType.TEXT,
-                rect: { x: 80, y: 100, width: 920, height: 150 }, // Top header
+                rect: { x: 80, y: 100, width: 920, height: 150 },
                 constraints: { charLimit: 60 }
             },
             {
                 id: 'body',
                 type: ElementType.TEXT,
-                rect: { x: 80, y: 300, width: 920, height: 600 }, // Main body
+                rect: { x: 80, y: 300, width: 920, height: 600 },
                 constraints: { charLimit: 500 }
             }
         ]
     },
-    // 3. QUOTE / IMPACT SLIDE
+    // 3. NUMBERED
     {
-        id: 'tpl_quote',
-        name: 'Quote / Impact',
+        id: 'NUMBERED',
+        name: 'Numbered List',
         version: 1,
         aspectRatio: AspectRatio.RATIO_1_1,
         backgroundElements: [],
         slots: [
             {
-                id: 'headline',
+                id: 'heading',
                 type: ElementType.TEXT,
-                rect: { x: 140, y: 240, width: 800, height: 600 }, // Big center text
+                rect: { x: 80, y: 100, width: 920, height: 150 },
+                constraints: { charLimit: 60 }
+            },
+            {
+                id: 'body',
+                type: ElementType.TEXT,
+                rect: { x: 120, y: 300, width: 880, height: 650 },
+                constraints: { charLimit: 500 }
+            }
+        ]
+    },
+    // 4. COMPARISON
+    {
+        id: 'COMPARISON',
+        name: 'Text Comparison',
+        version: 1,
+        aspectRatio: AspectRatio.RATIO_1_1,
+        backgroundElements: [],
+        slots: [
+            {
+                id: 'heading',
+                type: ElementType.TEXT,
+                rect: { x: 80, y: 100, width: 920, height: 120 },
+                constraints: { charLimit: 60 }
+            },
+            {
+                id: 'left_body',
+                type: ElementType.TEXT,
+                rect: { x: 80, y: 250, width: 440, height: 650 },
+                constraints: { charLimit: 250 }
+            },
+            {
+                id: 'right_body',
+                type: ElementType.TEXT,
+                rect: { x: 560, y: 250, width: 440, height: 650 },
+                constraints: { charLimit: 250 }
+            }
+        ]
+    },
+    // 5. COMPARISON_IMAGE
+    {
+        id: 'COMPARISON_IMAGE',
+        name: 'Side-by-side Images',
+        version: 1,
+        aspectRatio: AspectRatio.RATIO_1_1,
+        backgroundElements: [],
+        slots: [
+            {
+                id: 'heading',
+                type: ElementType.TEXT,
+                rect: { x: 80, y: 80, width: 920, height: 100 },
+                constraints: { charLimit: 60 }
+            },
+            {
+                id: 'left_image',
+                type: ElementType.IMAGE,
+                rect: { x: 80, y: 200, width: 440, height: 600 }
+            },
+            {
+                id: 'right_image',
+                type: ElementType.IMAGE,
+                rect: { x: 560, y: 200, width: 440, height: 600 }
+            }
+        ]
+    },
+    // 6. IMAGE_ONLY
+    {
+        id: 'IMAGE_ONLY',
+        name: 'Full Bleed Image',
+        version: 1,
+        aspectRatio: AspectRatio.RATIO_1_1,
+        backgroundElements: [],
+        slots: [
+            {
+                id: 'main_image',
+                type: ElementType.IMAGE,
+                rect: { x: 0, y: 0, width: 1080, height: 1080 }
+            },
+            {
+                id: 'caption',
+                type: ElementType.TEXT,
+                rect: { x: 100, y: 850, width: 880, height: 150 },
+                constraints: { charLimit: 100 }
+            }
+        ]
+    },
+    // 7. IMAGE_TEXT
+    {
+        id: 'IMAGE_TEXT',
+        name: 'Image + Text',
+        version: 1,
+        aspectRatio: AspectRatio.RATIO_1_1,
+        backgroundElements: [],
+        slots: [
+            {
+                id: 'main_image',
+                type: ElementType.IMAGE,
+                rect: { x: 80, y: 150, width: 440, height: 780 }
+            },
+            {
+                id: 'heading',
+                type: ElementType.TEXT,
+                rect: { x: 560, y: 150, width: 440, height: 200 }
+            },
+            {
+                id: 'body',
+                type: ElementType.TEXT,
+                rect: { x: 560, y: 380, width: 440, height: 550 }
+            }
+        ]
+    },
+    // 8. HEADING
+    {
+        id: 'HEADING',
+        name: 'Section Divider',
+        version: 1,
+        aspectRatio: AspectRatio.RATIO_1_1,
+        backgroundElements: [],
+        slots: [
+            {
+                id: 'heading',
+                type: ElementType.TEXT,
+                rect: { x: 140, y: 240, width: 800, height: 600 },
                 constraints: { charLimit: 140 }
             }
         ]
     },
-    // 4. END / CTA SLIDE
+    // 9. CTA
     {
-        id: 'tpl_end',
-        name: 'End / CTA',
+        id: 'CTA',
+        name: 'Call to Action',
         version: 1,
         aspectRatio: AspectRatio.RATIO_1_1,
-        backgroundElements: [
-            {
-                id: uuidv4(),
-                type: ElementType.SHAPE, // Arrow or icon placeholder?
-                shapeType: 'circle',
-                x: 440, y: 200, width: 200, height: 200,
-                fill: '#3B82F6', stroke: '', strokeWidth: 0,
-                rotation: 0, opacity: 1, locked: true, zIndex: 0
-            }
-        ],
+        backgroundElements: [],
         slots: [
             {
-                id: 'headline',
+                id: 'heading',
                 type: ElementType.TEXT,
-                rect: { x: 100, y: 500, width: 880, height: 200 }, // "Thanks for reading!"
+                rect: { x: 100, y: 400, width: 880, height: 200 },
                 constraints: { charLimit: 60 }
             },
             {
-                id: 'cta',
+                id: 'subtext',
                 type: ElementType.TEXT,
-                rect: { x: 100, y: 750, width: 880, height: 150 }, // "Follow for more"
+                rect: { x: 100, y: 650, width: 880, height: 100 },
                 constraints: { charLimit: 100 }
+            },
+            {
+                id: 'buttonText',
+                type: ElementType.TEXT,
+                rect: { x: 290, y: 800, width: 500, height: 120 },
+                constraints: { charLimit: 30 }
             }
         ]
     }

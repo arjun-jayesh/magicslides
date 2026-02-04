@@ -1,71 +1,106 @@
-import { Project, Slide, ElementType, TextElement, AspectRatio } from '@/models/types';
+import { Project, Slide, ElementType, TextElement, ImageElement, AspectRatio, SlideLayoutType, CanvasElement, GlassOverlay } from '@/models/types';
 import { AIPayloadV2 } from '../parser/responseParser';
 import { BASE_TEMPLATES } from '@/features/templates/registry';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ContentMapper {
+    static inferLayoutType(slide: Slide): string {
+        if (slide.elements.length === 1 && slide.elements[0].type === ElementType.TEXT) {
+            const fontEl = slide.elements[0] as TextElement;
+            return fontEl.fontSize > 40 ? 'TITLE' : 'HEADING';
+        }
+        if (slide.elements.some(el => el.type === ElementType.IMAGE)) {
+            return 'IMAGE_TEXT';
+        }
+        return 'CONTENT'; // default
+    }
+
     static createProjectFromAI(payload: AIPayloadV2): Project {
         const slides: Slide[] = payload.slides.map((content, index) => {
-            // 1. Select Template
-            let templateId = 'tpl_content'; // Default
-            if (index === 0) templateId = 'tpl_hero';
-            else if (content.body.length < 50 && content.body.length > 0) templateId = 'tpl_quote'; // Short body = Quote? or just empty body? 
-            // Better heuristic:
-            // Hero: Index 0
-            // Quote: Body < 60 chars OR Headline longer than Body (if body exists)
-            // Content: Default
+            // 1. Select Template based on AI type hint
+            const templateId = content.type.toUpperCase();
+            const template = BASE_TEMPLATES.find(t => t.id === templateId) || BASE_TEMPLATES.find(t => t.id === 'CONTENT')!;
 
-            const template = BASE_TEMPLATES.find(t => t.id === templateId) || BASE_TEMPLATES[0];
+            const elements: CanvasElement[] = [...template.backgroundElements.map(e => ({ ...e, id: uuidv4() }))];
 
-            const elements = template.backgroundElements.map(e => ({ ...e, id: uuidv4() }));
+            // 2. Map Slots to Content
+            template.slots.forEach(slot => {
+                if (slot.type === ElementType.TEXT) {
+                    let textValue = '';
+                    let fontSize = 40;
+                    let fontWeight: string | number = 400;
+                    let fill = '#ffffff';
 
-            // 2. Map Slots
-            // We map 'headline' -> 'headline' slot
-            // We map 'body' -> 'body' or 'subhead' slot
+                    // Mapping logic per slot ID
+                    switch (slot.id) {
+                        case 'heading':
+                            textValue = content.heading || '';
+                            fontSize = 69; // User requirement
+                            fontWeight = 800;
+                            break;
+                        case 'subheading':
+                            textValue = content.subheading || '';
+                            fontSize = 44;
+                            fontWeight = 400;
+                            fill = '#cbd5e1';
+                            break;
+                        case 'body':
+                        case 'left_body':
+                        case 'right_body':
+                            textValue = content.body || '';
+                            fontSize = 54; // User requirement
+                            fontWeight = 400;
+                            fill = '#94a3b8';
+                            break;
+                        case 'caption':
+                            textValue = content.subheading || content.body || '';
+                            fontSize = 28;
+                            fill = '#ffffff';
+                            break;
+                        case 'buttonText':
+                            textValue = content.buttonText || 'Learn More';
+                            fontSize = 44;
+                            fontWeight = 700;
+                            fill = '#ffffff';
+                            break;
+                        case 'subtext':
+                            textValue = content.subtext || '';
+                            fontSize = 24;
+                            fill = '#94a3b8';
+                            break;
+                    }
 
-            // Headline
-            if (content.headline) {
-                const slot = template.slots.find(s => s.id === 'headline');
-                if (slot) {
-                    const textEl: TextElement = {
+                    if (textValue) {
+                        const textEl: TextElement = {
+                            id: uuidv4(),
+                            type: ElementType.TEXT,
+                            x: slot.rect.x,
+                            y: slot.rect.y,
+                            width: slot.rect.width,
+                            height: slot.rect.height,
+                            rotation: 0,
+                            opacity: 1,
+                            locked: false,
+                            zIndex: 10,
+                            content: textValue,
+                            fontSize,
+                            fontFamily: 'Inter',
+                            fontWait: fontWeight,
+                            fill,
+                            align: (templateId === 'TITLE' || templateId === 'CTA' || templateId === 'HEADING') ? 'center' : 'left',
+                            verticalAlign: (templateId === 'TITLE' || templateId === 'HEADING') ? 'middle' : 'top',
+                            lineHeight: 1.2,
+                            autoWidth: false,
+                            autoHeight: true
+                        };
+                        elements.push(textEl);
+                    }
+                } else if (slot.type === ElementType.IMAGE) {
+                    // Placeholder Image
+                    const imgEl: ImageElement = {
                         id: uuidv4(),
-                        type: ElementType.TEXT,
-                        x: slot.rect.x,
-                        y: slot.rect.y,
-                        width: slot.rect.width,
-                        height: slot.rect.height,
-                        rotation: 0,
-                        opacity: 1,
-                        locked: false, // User can move it
-                        zIndex: 10,
-                        content: content.headline,
-                        fontSize: templateId === 'tpl_hero' ? 80 : 56,
-                        fontFamily: 'Inter',
-                        fontWait: 800,
-                        fill: '#ffffff',
-                        align: templateId === 'tpl_quote' ? 'center' : 'left',
-                        verticalAlign: templateId === 'tpl_quote' ? 'middle' : 'top',
-                        lineHeight: 1.1,
-                        autoWidth: false,
-                        autoHeight: true
-                    };
-                    elements.push(textEl);
-                }
-            }
-
-            // Body
-            if (content.body) {
-                // Try 'body' slot first, then 'subhead' (for hero)
-                let slot = template.slots.find(s => s.id === 'body');
-                if (!slot) slot = template.slots.find(s => s.id === 'subhead');
-
-                // If quote template and we have body, maybe append to headline or ignore?
-                // If Quote template has no body slot.
-
-                if (slot) {
-                    const textEl: TextElement = {
-                        id: uuidv4(),
-                        type: ElementType.TEXT,
+                        type: ElementType.IMAGE,
+                        src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60', // Abstract placeholder
                         x: slot.rect.x,
                         y: slot.rect.y,
                         width: slot.rect.width,
@@ -73,101 +108,38 @@ export class ContentMapper {
                         rotation: 0,
                         opacity: 1,
                         locked: false,
-                        zIndex: 10,
-                        content: content.body,
-                        fontSize: templateId === 'tpl_hero' ? 36 : 32,
-                        fontFamily: 'Inter',
-                        fontWait: 400,
-                        fill: '#cccccc', // Muted text
-                        align: 'left',
-                        verticalAlign: 'top',
-                        lineHeight: 1.5,
-                        autoWidth: false,
-                        autoHeight: true
+                        zIndex: 5,
+                        maintainAspectRatio: false, // Fill the slot
+                        alt: content.imagePlaceholder || 'AI Placeholder'
                     };
-                    elements.push(textEl);
+                    elements.push(imgEl);
                 }
+            });
+
+            // 3. Glassmorphism Logic
+            let glassOverlay: GlassOverlay | undefined = undefined;
+            if (content.hasGlassOverlay || templateId === 'IMAGE_TEXT' || templateId === 'IMAGE_ONLY') {
+                glassOverlay = {
+                    enabled: true,
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 16,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: 24,
+                    opacity: 1
+                };
             }
 
             return {
                 id: uuidv4(),
                 order: index,
-                backgroundColor: '#000000', // Default dark
+                backgroundColor: '#020617', // Modern Slate Dark
                 backgroundFilters: { blur: 0, brightness: 0, contrast: 0, saturation: 0 },
-                elements
+                elements,
+                layoutType: templateId as SlideLayoutType,
+                glassOverlay
             };
         });
-
-        // 3. Append CTA Slide if CTA exists
-        if (payload.cta) {
-            const ctaTemplate = BASE_TEMPLATES.find(t => t.id === 'tpl_end')!;
-            const ctaElements = ctaTemplate.backgroundElements.map(e => ({ ...e, id: uuidv4() }));
-
-            // Map 'headline' -> 'Thanks'
-            // Map 'cta' -> payload.cta
-
-            // Headline (Generic "Thanks")
-            const headSlot = ctaTemplate.slots.find(s => s.id === 'headline');
-            if (headSlot) {
-                ctaElements.push({
-                    id: uuidv4(),
-                    type: ElementType.TEXT,
-                    x: headSlot.rect.x,
-                    y: headSlot.rect.y,
-                    width: headSlot.rect.width,
-                    height: headSlot.rect.height,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    zIndex: 10,
-                    content: "Thanks for reading!",
-                    fontSize: 64,
-                    fontFamily: 'Inter',
-                    fontWait: 800,
-                    fill: '#ffffff',
-                    align: 'center',
-                    verticalAlign: 'middle',
-                    lineHeight: 1.1,
-                    autoWidth: false,
-                    autoHeight: true
-                } as TextElement);
-            }
-
-            // CTA Text
-            const ctaSlot = ctaTemplate.slots.find(s => s.id === 'cta');
-            if (ctaSlot) {
-                ctaElements.push({
-                    id: uuidv4(),
-                    type: ElementType.TEXT,
-                    x: ctaSlot.rect.x,
-                    y: ctaSlot.rect.y,
-                    width: ctaSlot.rect.width,
-                    height: ctaSlot.rect.height,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    zIndex: 10,
-                    content: payload.cta,
-                    fontSize: 48,
-                    fontFamily: 'Inter',
-                    fontWait: 600,
-                    fill: '#3B82F6', // Blue CTA
-                    align: 'center',
-                    verticalAlign: 'top',
-                    lineHeight: 1.2,
-                    autoWidth: false,
-                    autoHeight: true
-                } as TextElement);
-            }
-
-            slides.push({
-                id: uuidv4(),
-                order: slides.length,
-                backgroundColor: '#000000',
-                backgroundFilters: { blur: 0, brightness: 0, contrast: 0, saturation: 0 },
-                elements: ctaElements
-            });
-        }
 
         return {
             id: uuidv4(),
@@ -176,8 +148,8 @@ export class ContentMapper {
             slides,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            aspectRatio: AspectRatio.RATIO_1_1, // Default
-            theme: 'default'
+            aspectRatio: AspectRatio.RATIO_1_1,
+            theme: 'preset_modern'
         };
     }
 }

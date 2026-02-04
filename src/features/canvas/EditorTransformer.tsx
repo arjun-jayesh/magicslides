@@ -3,11 +3,17 @@ import { Transformer } from 'react-konva';
 import { useEditorStore } from '@/store/useEditorStore';
 
 const EditorTransformer: React.FC = () => {
-    const { selectedIds, activeSlideId } = useEditorStore(); // Removed project
+    const { selectedIds, activeSlideId, editingElementId } = useEditorStore();
     const trRef = useRef<any>(null);
 
     useEffect(() => {
         if (!trRef.current) return;
+
+        if (editingElementId) {
+            trRef.current.nodes([]);
+            trRef.current.getLayer().batchDraw();
+            return;
+        }
 
         const stage = trRef.current.getStage();
         if (!stage) return;
