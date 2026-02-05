@@ -12,7 +12,7 @@ export class ContentMapper {
         if (slide.elements.some(el => el.type === ElementType.IMAGE)) {
             return 'IMAGE_TEXT';
         }
-        return 'CONTENT'; // default
+        return 'CONTENT';
     }
 
     static createProjectFromAI(payload: AIPayloadV2): Project {
@@ -26,51 +26,9 @@ export class ContentMapper {
             // 2. Map Slots to Content
             template.slots.forEach(slot => {
                 if (slot.type === ElementType.TEXT) {
-                    let textValue = '';
-                    let fontSize = 40;
-                    let fontWeight: string | number = 400;
-                    let fill = '#ffffff';
+                    const textConfig = ContentMapper.getTextConfig(slot.id, content, templateId);
 
-                    // Mapping logic per slot ID
-                    switch (slot.id) {
-                        case 'heading':
-                            textValue = content.heading || '';
-                            fontSize = 69; // User requirement
-                            fontWeight = 800;
-                            break;
-                        case 'subheading':
-                            textValue = content.subheading || '';
-                            fontSize = 44;
-                            fontWeight = 400;
-                            fill = '#cbd5e1';
-                            break;
-                        case 'body':
-                        case 'left_body':
-                        case 'right_body':
-                            textValue = content.body || '';
-                            fontSize = 54; // User requirement
-                            fontWeight = 400;
-                            fill = '#94a3b8';
-                            break;
-                        case 'caption':
-                            textValue = content.subheading || content.body || '';
-                            fontSize = 28;
-                            fill = '#ffffff';
-                            break;
-                        case 'buttonText':
-                            textValue = content.buttonText || 'Learn More';
-                            fontSize = 44;
-                            fontWeight = 700;
-                            fill = '#ffffff';
-                            break;
-                        case 'subtext':
-                            textValue = content.subtext || '';
-                            fontSize = 24;
-                            fill = '#94a3b8';
-                            break;
-                    }
-
-                    if (textValue) {
+                    if (textConfig.value) {
                         const textEl: TextElement = {
                             id: uuidv4(),
                             type: ElementType.TEXT,
@@ -82,13 +40,13 @@ export class ContentMapper {
                             opacity: 1,
                             locked: false,
                             zIndex: 10,
-                            content: textValue,
-                            fontSize,
+                            content: textConfig.value,
+                            fontSize: textConfig.fontSize,
                             fontFamily: 'Inter',
-                            fontWait: fontWeight,
-                            fill,
-                            align: (templateId === 'TITLE' || templateId === 'CTA' || templateId === 'HEADING') ? 'center' : 'left',
-                            verticalAlign: (templateId === 'TITLE' || templateId === 'HEADING') ? 'middle' : 'top',
+                            fontWeight: textConfig.fontWeight, // FIXED TYPO
+                            fill: textConfig.fill,
+                            align: textConfig.align,
+                            verticalAlign: textConfig.verticalAlign,
                             lineHeight: 1.2,
                             autoWidth: false,
                             autoHeight: true
@@ -96,11 +54,10 @@ export class ContentMapper {
                         elements.push(textEl);
                     }
                 } else if (slot.type === ElementType.IMAGE) {
-                    // Placeholder Image
                     const imgEl: ImageElement = {
                         id: uuidv4(),
                         type: ElementType.IMAGE,
-                        src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60', // Abstract placeholder
+                        src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
                         x: slot.rect.x,
                         y: slot.rect.y,
                         width: slot.rect.width,
@@ -109,23 +66,51 @@ export class ContentMapper {
                         opacity: 1,
                         locked: false,
                         zIndex: 5,
-                        maintainAspectRatio: false, // Fill the slot
-                        alt: content.imagePlaceholder || 'AI Placeholder'
+                        maintainAspectRatio: false,
+                        alt: content.imagePlaceholder || 'AI Placeholder Image'
                     };
                     elements.push(imgEl);
                 }
             });
 
-            // 3. Glassmorphism Logic
+            // 3. Handle NUMBERED type specially (add bullet list)
+            if (content.type === 'NUMBERED' && content.items && content.items.length > 0) {
+                const bulletText = content.items.map((item, idx) => `${idx + 1}. ${item}`).join('\n');
+                const bulletEl: TextElement = {
+                    id: uuidv4(),
+                    type: ElementType.TEXT,
+                    x: 100,
+                    y: 400,
+                    width: 880,
+                    height: 500,
+                    rotation: 0,
+                    opacity: 1,
+                    locked: false,
+                    zIndex: 11,
+                    content: bulletText,
+                    fontSize: 44,
+                    fontFamily: 'Inter',
+                    fontWeight: 400,
+                    fill: '#e2e8f0',
+                    align: 'left',
+                    verticalAlign: 'top',
+                    lineHeight: 1.5,
+                    autoWidth: false,
+                    autoHeight: true
+                };
+                elements.push(bulletEl);
+            }
+
+            // 4. Glassmorphism Logic
             let glassOverlay: GlassOverlay | undefined = undefined;
-            if (content.hasGlassOverlay || templateId === 'IMAGE_TEXT' || templateId === 'IMAGE_ONLY') {
+            if (content.hasGlassOverlay) {
                 glassOverlay = {
                     enabled: true,
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: 16,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    padding: 24,
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: 20,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    padding: 32,
                     opacity: 1
                 };
             }
@@ -133,7 +118,7 @@ export class ContentMapper {
             return {
                 id: uuidv4(),
                 order: index,
-                backgroundColor: '#020617', // Modern Slate Dark
+                backgroundColor: '#0f172a', // Slate 900
                 backgroundFilters: { blur: 0, brightness: 0, contrast: 0, saturation: 0 },
                 elements,
                 layoutType: templateId as SlideLayoutType,
@@ -150,6 +135,86 @@ export class ContentMapper {
             updatedAt: Date.now(),
             aspectRatio: AspectRatio.RATIO_1_1,
             theme: 'preset_modern'
+        };
+    }
+
+    private static getTextConfig(slotId: string, content: any, templateId: string): any {
+        const isCentered = ['TITLE', 'CTA', 'HEADING'].includes(templateId);
+
+        const configs: Record<string, any> = {
+            heading: {
+                value: content.heading || '',
+                fontSize: 69,
+                fontWeight: 800,
+                fill: '#ffffff',
+                align: isCentered ? 'center' : 'left',
+                verticalAlign: isCentered ? 'middle' : 'top'
+            },
+            subheading: {
+                value: content.subheading || '',
+                fontSize: 44,
+                fontWeight: 400,
+                fill: '#cbd5e1',
+                align: isCentered ? 'center' : 'left',
+                verticalAlign: 'top'
+            },
+            body: {
+                value: content.body || '',
+                fontSize: 54,
+                fontWeight: 400,
+                fill: '#94a3b8',
+                align: 'left',
+                verticalAlign: 'top'
+            },
+            left_body: {
+                value: content.leftContent || content.body || '',
+                fontSize: 48,
+                fontWeight: 400,
+                fill: '#94a3b8',
+                align: 'left',
+                verticalAlign: 'top'
+            },
+            right_body: {
+                value: content.rightContent || '',
+                fontSize: 48,
+                fontWeight: 400,
+                fill: '#94a3b8',
+                align: 'left',
+                verticalAlign: 'top'
+            },
+            caption: {
+                value: content.subheading || content.body || '',
+                fontSize: 32,
+                fontWeight: 400,
+                fill: '#ffffff',
+                align: 'center',
+                verticalAlign: 'top'
+            },
+            buttonText: {
+                value: content.buttonText || 'Learn More',
+                fontSize: 44,
+                fontWeight: 700,
+                fill: '#ffffff',
+                align: 'center',
+                verticalAlign: 'middle'
+            },
+            subtext: {
+                value: content.subtext || '',
+                fontSize: 28,
+                fontWeight: 400,
+                fill: '#94a3b8',
+                align: 'center',
+                verticalAlign: 'top'
+            }
+        };
+
+        return configs[slotId] || {
+            value: '',
+            fontSize: 40,
+            fontWeight: 400,
+            fill: '#ffffff',
+            align: 'left',
+            verticalAlign: 'top'
         };
     }
 }

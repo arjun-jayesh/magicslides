@@ -26,4 +26,4 @@ Write-Host "Model: $ModelPath"
 Write-Host "Port: 8080"
 
 # Run Server
-& $ServerExe -m $ModelPath --port 8080 -c 2048 --n-predict 2048
+& $ServerExe -m $ModelPath --port 8080 -c 4096 --n-predict 4096

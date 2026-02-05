@@ -73,7 +73,7 @@ export interface TextElement extends BaseElement {
     content: string;
     fontSize: number;
     fontFamily: string;
-    fontWait: number | string;
+    fontWeight: number | string;
     fill: string;
     gradient?: GradientConfig; // V2 Parity
     align: 'left' | 'center' | 'right' | 'justify';

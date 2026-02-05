@@ -21,7 +21,7 @@ export class AIService {
                         { role: 'user', content: req.userPrompt }
                     ],
                     temperature: req.temperature || 0.7,
-                    max_tokens: 2048,
+                    max_tokens: 1536,
                     response_format: { type: 'json_object' }
                 })
             });
