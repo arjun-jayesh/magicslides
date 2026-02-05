@@ -5,18 +5,20 @@ import { ResponseParser } from '@/core/parser/responseParser';
 import { ContentMapper } from '@/core/bridge/ContentMapper';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useToast } from '@/components/ui/ToastProvider';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 
 import { PresetManager } from '../../features/presets/PresetManager';
 
 type Tab = 'content' | 'design' | 'branding' | 'colors';
 
 export const AIPanel = () => {
+    const isMobile = useIsMobile();
     const [activeTab, setActiveTab] = useState<Tab>('content');
 
     // Content State
     const [topic, setTopic] = useState('');
     const [count, setCount] = useState(5);
-    const [tone, setTone] = useState('Professional');
+    const [tone, setTone] = useState<string>('Professional');
     const [style, setStyle] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -90,7 +92,7 @@ export const AIPanel = () => {
     };
 
     return (
-        <div className="w-80 bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden">
+        <div className={`${isMobile ? 'flex-1 w-full' : 'w-80'} bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden`}>
             {/* Tabs Header */}
             <div className="flex border-b border-gray-700">
                 <button

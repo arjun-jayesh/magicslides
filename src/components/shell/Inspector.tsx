@@ -3,8 +3,10 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { AspectRatio, ElementType, TextElement } from '@/models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/ToastProvider';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 
 export const Inspector = () => {
+    const isMobile = useIsMobile();
     const {
         project,
         activeSlideId,
@@ -75,10 +77,10 @@ export const Inspector = () => {
         setProject({ ...project, aspectRatio: e.target.value as any });
     };
 
-    if (!activeSlide) return <div className="w-64 bg-gray-900 border-l border-gray-700 p-4">No Slide</div>;
+    if (!activeSlide) return <div className={`${isMobile ? 'flex-1 w-full' : 'w-64'} bg-gray-900 border-l border-gray-700 p-4`}>No Slide</div>;
 
     return (
-        <div className="w-64 bg-gray-900 border-l border-gray-700 flex flex-col overflow-y-auto text-sm text-gray-300 custom-scrollbar">
+        <div className={`${isMobile ? 'flex-1 w-full' : 'w-64'} bg-gray-900 border-l border-gray-700 flex flex-col overflow-y-auto text-sm text-gray-300 custom-scrollbar`}>
             {!selectedElement ? (
                 // --- SLIDE SETTINGS ---
                 <div className="p-4 space-y-6">
@@ -401,8 +403,8 @@ export const Inspector = () => {
                                     <div>
                                         <label className="text-xs block mb-1">Weight</label>
                                         <select
-                                            value={textEl.fontWait}
-                                            onChange={(e) => updateElement(activeSlideId!, selectedId, { fontWait: parseInt(e.target.value) })}
+                                            value={textEl.fontWeight}
+                                            onChange={(e) => updateElement(activeSlideId!, selectedId, { fontWeight: parseInt(e.target.value) })}
                                             className="w-full bg-gray-800 border border-gray-600 rounded p-1 text-xs"
                                         >
                                             <option value={100}>Thin</option>

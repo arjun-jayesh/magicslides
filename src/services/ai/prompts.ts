@@ -143,7 +143,7 @@ NOW GENERATE VALID JSON BASED ON USER REQUEST. OUTPUT JSON ONLY.
 export interface PromptOptions {
   topic: string;
   count: number;
-  tone: 'Professional' | 'Casual' | 'Viral';
+  tone: string;
   style?: string;
 }
 

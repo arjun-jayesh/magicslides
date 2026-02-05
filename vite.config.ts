@@ -25,7 +25,9 @@ export default defineConfig({
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/ai-api/, '')
             }
-        }
+        },
+        allowedHosts: true,
+        strictPort: true
     },
     build: {
         outDir: 'dist',
