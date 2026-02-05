@@ -5,7 +5,7 @@ export interface AIRequest {
 }
 
 export class AIService {
-    private static ENDPOINT = 'http://127.0.0.1:8080/v1/chat/completions';
+    private static ENDPOINT = '/ai-api/v1/chat/completions';
 
     static async generate(req: AIRequest): Promise<string> {
         try {

@@ -18,6 +18,13 @@ export default defineConfig({
         hmr: {
             host: 'localhost',
             port: 3000
+        },
+        proxy: {
+            '/ai-api': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/ai-api/, '')
+            }
         }
     },
     build: {
