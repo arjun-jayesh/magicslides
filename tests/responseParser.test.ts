@@ -54,4 +54,17 @@ describe('ResponseParser', () => {
         expect(result.slides).toHaveLength(1);
         expect(result.slides[0].heading).toBe('Generation Failed');
     });
+
+    test('should migrate subheading to body if body is empty for CONTENT slides', () => {
+        const input = '{"title": "Heuristic Test", "slides": [{"type": "CONTENT", "heading": "Title", "subheading": "This should be body"}]}';
+        const result = ResponseParser.parse(input);
+        expect(result.slides[0].body).toBe('This should be body');
+        expect(result.slides[0].subheading).toBe('');
+    });
+
+    test('should provide placeholder for empty CONTENT slides', () => {
+        const input = '{"title": "Placeholder Test", "slides": [{"type": "CONTENT", "heading": "Title"}]}';
+        const result = ResponseParser.parse(input);
+        expect(result.slides[0].body).toContain('[AI failed to generate content]');
+    });
 });
