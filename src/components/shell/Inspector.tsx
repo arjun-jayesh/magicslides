@@ -4,8 +4,13 @@ import { AspectRatio, ElementType, TextElement } from '@/models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { ChevronRight } from 'lucide-react';
 
-export const Inspector = () => {
+interface InspectorProps {
+    onClose?: () => void;
+}
+
+export const Inspector: React.FC<InspectorProps> = ({ onClose }) => {
     const isMobile = useIsMobile();
     const {
         project,
@@ -85,7 +90,14 @@ export const Inspector = () => {
                 // --- SLIDE SETTINGS ---
                 <div className="p-4 space-y-6">
                     <div>
-                        <h3 className="font-bold text-white mb-2">Slide Settings</h3>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-bold text-white">Slide Settings</h3>
+                            {isMobile && onClose && (
+                                <button onClick={onClose} className="text-gray-500 hover:text-white">
+                                    <ChevronRight size={20} />
+                                </button>
+                            )}
+                        </div>
                         <div className="space-y-1">
                             <label className="text-xs">Project Aspect Ratio</label>
                             <select
@@ -274,6 +286,11 @@ export const Inspector = () => {
                 // --- ELEMENT SETTINGS ---
                 <div className="p-4 space-y-6">
                     <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
+                        {isMobile && onClose && (
+                            <button onClick={onClose} className="mr-2 text-gray-500 hover:text-white">
+                                <ChevronRight size={20} />
+                            </button>
+                        )}
                         <h3 className="font-bold text-white uppercase text-xs tracking-wider">Edit {selectedElement.type}</h3>
                         <div className="text-xs text-gray-500 font-mono">{selectedElement.id.slice(-4)}</div>
                     </div>

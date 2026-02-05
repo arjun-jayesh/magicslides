@@ -6,12 +6,17 @@ import { ContentMapper } from '@/core/bridge/ContentMapper';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { ChevronLeft } from 'lucide-react';
 
 import { PresetManager } from '../../features/presets/PresetManager';
 
 type Tab = 'content' | 'design' | 'branding' | 'colors';
 
-export const AIPanel = () => {
+interface AIPanelProps {
+    onClose?: () => void;
+}
+
+export const AIPanel: React.FC<AIPanelProps> = ({ onClose }) => {
     const isMobile = useIsMobile();
     const [activeTab, setActiveTab] = useState<Tab>('content');
 
@@ -94,7 +99,12 @@ export const AIPanel = () => {
     return (
         <div className={`${isMobile ? 'flex-1 w-full' : 'w-80'} bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden`}>
             {/* Tabs Header */}
-            <div className="flex border-b border-gray-700">
+            <div className="flex border-b border-gray-700 items-center">
+                {isMobile && onClose && (
+                    <button onClick={onClose} className="p-3 text-gray-400 hover:text-white border-r border-gray-700">
+                        <ChevronLeft size={20} />
+                    </button>
+                )}
                 <button
                     onClick={() => setActiveTab('content')}
                     className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'content' ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
