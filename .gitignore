@@ -23,4 +23,7 @@ yarn-error.log*
 
 # AI local files
 *.gguf
-llama-server.exe
+*.exe
+*.dll
+temp_llama/
+cloudflared.exe

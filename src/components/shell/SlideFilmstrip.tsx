@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { Trash2, Plus, Check, X } from 'lucide-react';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 
 export const SlideFilmstrip: React.FC = () => {
+    const isMobile = useIsMobile();
     const { project, activeSlideId, setActiveSlide, deleteSlide, addSlideAtIndex } = useEditorStore();
     const [confirmId, setConfirmId] = useState<string | null>(null);
 
     return (
-        <div className="h-28 bg-gray-900 border-b border-gray-700 flex items-center px-6 overflow-x-auto scrollbar-hide py-2 shadow-inner">
+        <div className={`${isMobile ? 'h-20 px-2 shadow-none border-b-0' : 'h-28 px-6 shadow-inner'} bg-gray-900 border-b border-gray-700 flex items-center overflow-x-auto scrollbar-hide py-2 transition-all`}>
             <div className="flex items-center space-x-2">
                 {/* Initial Add Button */}
-                <button
-                    onClick={() => addSlideAtIndex(0)}
-                    className="flex-shrink-0 w-8 h-20 rounded bg-gray-800/50 hover:bg-blue-600/30 border border-dashed border-gray-600 hover:border-blue-500 transition-all group"
-                    title="Add slide at beginning"
-                >
-                    <Plus className="w-4 h-4 mx-auto text-gray-500 group-hover:text-blue-400" />
-                </button>
+                {!isMobile && (
+                    <button
+                        onClick={() => addSlideAtIndex(0)}
+                        className="flex-shrink-0 w-8 h-20 rounded bg-gray-800/50 hover:bg-blue-600/30 border border-dashed border-gray-600 hover:border-blue-500 transition-all group"
+                        title="Add slide at beginning"
+                    >
+                        <Plus className="w-4 h-4 mx-auto text-gray-500 group-hover:text-blue-400" />
+                    </button>
+                )}
 
                 {project.slides.map((slide, index) => {
                     const isActive = slide.id === activeSlideId;
@@ -27,7 +31,7 @@ export const SlideFilmstrip: React.FC = () => {
                             <div
                                 onClick={() => setActiveSlide(slide.id)}
                                 className={`
-                                    group relative flex-shrink-0 w-36 h-20 rounded-lg cursor-pointer transition-all duration-200
+                                    group relative flex-shrink-0 ${isMobile ? 'w-28 h-14' : 'w-36 h-20'} rounded-lg cursor-pointer transition-all duration-200
                                     ${isActive ? 'ring-2 ring-blue-500 scale-102 shadow-lg shadow-blue-500/20' : 'hover:bg-gray-800 opacity-80 hover:opacity-100 border border-gray-700'}
                                 `}
                                 style={{ backgroundColor: slide.backgroundColor }}

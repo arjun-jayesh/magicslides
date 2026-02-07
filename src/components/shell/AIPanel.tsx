@@ -6,7 +6,7 @@ import { ContentMapper } from '@/core/bridge/ContentMapper';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Palette, User, Pipette, Sparkles } from 'lucide-react';
 
 import { PresetManager } from '../../features/presets/PresetManager';
 
@@ -107,27 +107,31 @@ export const AIPanel: React.FC<AIPanelProps> = ({ onClose }) => {
                 )}
                 <button
                     onClick={() => setActiveTab('content')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'content' ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex-1 py-3 flex items-center justify-center text-xs font-bold uppercase tracking-wider ${activeTab === 'content' ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    title="Content Generator"
                 >
-                    Content
+                    {isMobile ? <Sparkles size={18} /> : 'Content'}
                 </button>
                 <button
                     onClick={() => setActiveTab('design')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'design' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex-1 py-3 flex items-center justify-center text-xs font-bold uppercase tracking-wider ${activeTab === 'design' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    title="Design Presets"
                 >
-                    Design
+                    {isMobile ? <Palette size={18} /> : 'Design'}
                 </button>
                 <button
                     onClick={() => setActiveTab('branding')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'branding' ? 'bg-gray-800 text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex-1 py-3 flex items-center justify-center text-xs font-bold uppercase tracking-wider ${activeTab === 'branding' ? 'bg-gray-800 text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    title="Branding Identity"
                 >
-                    Branding
+                    {isMobile ? <User size={18} /> : 'Branding'}
                 </button>
                 <button
                     onClick={() => setActiveTab('colors')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${activeTab === 'colors' ? 'bg-gray-800 text-green-400 border-b-2 border-green-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex-1 py-3 flex items-center justify-center text-xs font-bold uppercase tracking-wider ${activeTab === 'colors' ? 'bg-gray-800 text-green-400 border-b-2 border-green-400' : 'text-gray-500 hover:text-gray-300'}`}
+                    title="Global Colors"
                 >
-                    Colors
+                    {isMobile ? <Pipette size={18} /> : 'Colors'}
                 </button>
             </div>
 
